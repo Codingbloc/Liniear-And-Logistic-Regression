@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<!-- saved from url=(0043)https://static.openguid.org/core/index.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+	<title>OpenGUID</title>
+
+<script type="text/javascript">
+(function(){
+
+	var cookie = new function(){
+
+		this.set = function(key, value, expiresInDays){
+			expires = new Date(+new Date + 1000 * (60 * 60 * 24) * expiresInDays); // This is needed because IE does not support the `max-age` cookie attribute.
+			if (expires !== '' && 'toGMTString' in expires) expires = ';expires=' + expires.toGMTString();
+			document.cookie = key + '=' + value + expires + ';path=/' + ';secure';
+		};
+
+		this.all = function () {
+			if (document.cookie === '') return {};
+			var cookies = document.cookie.split('; '),
+			    result = {};
+
+			for (var i = 0, l = cookies.length; i < l; i++) {
+				var item = cookies[i].split('=');
+				var key = item.shift();
+				var value = item.join('=');
+				result[key] = value;
+			}
+			return result;
+		};
+
+		this.get = function (keys, fallback) {
+			var cookies = this.all();
+			return cookies[keys];
+		};
+	};
+
+
+	var GUIDStorage = new function(){
+		
+		function generateGUID() {
+		  function s4() {
+		    return Math.floor((1 + Math.random()) * 0x10000)
+		      .toString(16)
+		      .substring(1);
+		  }
+		  return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+		    s4() + '-' + s4() + s4() + s4();
+		}
+
+		this.setOrRetrieveGUID = function(){
+			var localStorageGuid = localStorage.getItem('guid');
+			var cookieGuid = cookie.get('guid');
+			var theGuid = localStorageGuid || cookieGuid || generateGUID();
+			if(!(localStorageGuid | cookieGuid)){
+				localStorage.setItem('guid', theGuid);
+			}
+
+			/* Reset cookie anyway to extend it's expiry */
+			cookie.set('guid', theGuid, 90);
+		}
+
+		this.optIn = function(){
+			var localStorageGuid = localStorage.getItem('guid');
+			var cookieGuid = cookie.get('guid');
+			var theGuid = localStorageGuid || cookieGuid;
+			if(theGuid == '00000000-0000-0000-0000-000000000000'){
+				theGuid = generateGUID();
+				localStorage.setItem('guid', theGuid);
+			}
+
+			/* Reset cookie anyway to extend it's expiry */
+			cookie.set('guid', theGuid, 90);
+		}
+
+		this.optOut = function(){
+			var theGuid = '00000000-0000-0000-0000-000000000000';
+			localStorage.setItem('guid', theGuid);
+			cookie.set('guid', theGuid, 90);
+		}
+
+	};
+
+	// Initialize
+	GUIDStorage.setOrRetrieveGUID();
+
+
+	window.OpenGUIDCore = new function() {
+
+		this.getGUID = function(){
+			return localStorage.getItem('guid') || cookie.get('guid');
+		};
+
+		this.optOut = function(){
+			GUIDStorage.optOut();
+		};
+
+		this.optIn = function(){
+			GUIDStorage.optIn();
+		};
+
+	}
+
+
+	function listener(event){
+		var message = event.message || event.data;
+		if(message == 'getGUID'){
+			var guid = OpenGUIDCore.getGUID();
+			window.parent.postMessage({ 'guid': guid }, '*');
+		} else if(message == 'isReady'){
+			window.parent.postMessage({ 'ready': true }, '*');
+		} else if(message == 'optOut'){
+			OpenGUIDCore.optOut();
+			window.parent.postMessage({ 'status': true }, '*');
+		} else if(message == 'optIn'){
+			OpenGUIDCore.optIn();
+			window.parent.postMessage({ 'status': true }, '*');
+		}
+	};
+
+
+	if (window.addEventListener){
+      addEventListener("message", listener, false)
+    } else {
+      attachEvent("onmessage", listener)
+    }
+
+    window.parent.postMessage({ 'ready': true }, '*');
+
+}());
+</script>
+
+</head>
+<body>
+
+
+</body></html>

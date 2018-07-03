@@ -1,0 +1,17 @@
+.nob {
+  transition: 0.25s all;
+}
+.nob circle {
+  fill: rgba(0, 0, 0, 0.04);
+  stroke: rgba(0, 0, 0, 0.04);
+}
+.nob:hover {
+  fill: rgba(0, 0, 0, 0.2);
+}
+section.title .title {
+  font-size: 4em;
+}
+h3 {
+  font-size: 1.75em;
+  font-weight: bold;
+}
